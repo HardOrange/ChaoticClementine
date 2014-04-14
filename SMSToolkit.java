@@ -12,10 +12,10 @@ public class SMSToolkit {
 	
 	private static final Logger log = Logger.getLogger(SMSToolkit.class.getName());
 	
-	public static String prepString(String s) {
-		String ss = s.replaceAll("\\s","%20");
-		log.fine(ss);
-		return ss;
+	public static String prepString(String string) {
+		String sansSpace = string.replaceAll("\\s","%20");
+		log.fine(sansSpace);
+		return sansSpace;
 	}
 
 	public static void addMsgToQueue(String text, String msisdn) {
