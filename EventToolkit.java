@@ -15,8 +15,8 @@ public class EventToolkit {
 		
 		e.setProperty("name", eName);
 		e.setProperty("minPeople" , Integer.parseInt(minPeople));
-		Date d = new Date();
-		e.setProperty("timeout", new Date(d.getTime() + Integer.parseInt(timeout) * 60000));
+		Date date = new Date();
+		e.setProperty("timeout", new Date(date.getTime() + Integer.parseInt(timeout) * 60000));
 		e.setProperty("creator", creator);
 		ArrayList<String> yesusr = new ArrayList<String>();
 		yesusr.add(creator);

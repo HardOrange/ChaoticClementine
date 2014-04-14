@@ -19,8 +19,8 @@ public class SMSToolkit {
 	}
 
 	public static void addMsgToQueue(String text, String msisdn) {
-		Queue q = QueueFactory.getDefaultQueue();
-		q.add(TaskOptions.Builder.withUrl("/api/send/sms").param("text", text).param("msisdn", msisdn));
+		Queue queue = QueueFactory.getDefaultQueue();
+		queue.add(TaskOptions.Builder.withUrl("/api/send/sms").param("text", text).param("msisdn", msisdn));
 	}
 	
 	public static void parseSMS(String text, String msisdn) throws IOException {

@@ -11,64 +11,113 @@ public class UserToolkit {
 
 	private static DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
 	
-	
-	public static User fetchUser(String number) {
-		Key k = KeyFactory.createKey("user", number);
+	/*
+	*Fetches a User from the Datastore. Logs Entry into log.
+	*If the User is not Found, log the entry, and return null
+	*@param	phoneNumber	The Phone Number of the User for Lookup
+	*@return			The User that is in the datastore, otherwise null
+	*
+	*/
+	public static User fetchUser(String phoneNumber) {
+		Key key = KeyFactory.createKey("user", phoneNumber);
 		Entity fetched;
 		try {
-			fetched = datastore.get(k);
-			log.fine("Found user:  " + number);
+			fetched = datastore.get(key);
+			log.fine("Found user:  " + phoneNumber);
 		} catch (EntityNotFoundException e) {
-			log.fine("Didn't find user:  " + number);
+			log.fine("Didn't find user:  " + phoneNumber);
 			return null;
 		}
-		User u = new User((String)fetched.getProperty("name"), fetched.getKey().getName());
-		return u;
+		User user = new User((String)fetched.getProperty("name"), fetched.getKey().getName());
+		return user;
 	}
+
+	/*
+	*@param	msisdn	Mobile Phone Number that will recieve the message.
+	*
+	*/
 	@SuppressWarnings("deprecation")
 	public static void listUsers(String msisdn) {
 		String message = "Current Users Are:%0a";
-		Query q = new Query("user");
-		PreparedQuery pq = datastore.prepare(q);
-		if(pq.countEntities() == 0){
+		Query query = new Query("user");
+		PreparedQuery preppedQuery = datastore.prepare(query);
+		if(preppedQuery.countEntities() == 0){
 			SMSToolkit.addMsgToQueue(SMSToolkit.prepString("There are no active users."), msisdn);
 			return;
 		}
-		for (Entity e : pq.asIterable()) {
-			message = message + "-" + e.getProperty("name") + "%0a";
+		for (Entity entity : preppedQuery.asIterable()) {
+			message = message + "-" + entity.getProperty("name") + "%0a";
 		}
 		
 		SMSToolkit.addMsgToQueue(SMSToolkit.prepString(message), msisdn);
 	}
-	public static void createUser(String number, String name) {
-		Entity e = new Entity("user", number);
-		e.setProperty("name", name);
-		datastore.put(e);
+
+	/*
+	*@param	phoneNumber	Mobile Telephone Number that will be registered to the Service
+	*@param	name 		Username for the user (Given By User)
+	*
+	*
+	*/
+	public static void createUser(String phoneNumber, String name) {
+		Entity entity = new Entity("user", phoneNumber);
+		entity.setProperty("name", name);
+		datastore.put(entity);
 	}
-	public static void snoozeUser(String number, String snoozeTime){
-		Entity e = new Entity("snoozers", number);
-		Date d = new Date();
-		e.setProperty("snoozeTime", new Date(d.getTime() + Integer.parseInt(snoozeTime)*60000));
-		datastore.put(e);
+
+	/*
+	*Snoozing means the User will not recieve any SMS messages during that time
+	*
+	*@param phoneNumber	Phone Number of User that will be snoozed
+	*@param snoozeTime	Time in minutes to be snoozed for
+	*
+	*/
+	public static void snoozeUser(String phoneNumber, String snoozeTime){
+		Entity entity = new Entity("snoozers", phoneNumber);
+		Date date = new Date();
+		entity.setProperty("snoozeTime", new Date(date.getTime() + Integer.parseInt(snoozeTime)*60000));
+		datastore.put(entity);
 	}
-	public static void unSnoozeUser(String number){
-		datastore.delete(KeyFactory.createKey("snoozers", number));
+
+	/*
+	*Unsnoozed the User when they need to be unsnoozed
+	*@param phoneNumber	The Mobile Phone of the User that will be unsnoozed.
+	*
+	*/
+	public static void unSnoozeUser(String phoneNumber){
+		datastore.delete(KeyFactory.createKey("snoozers", phoneNumber));
 	}
+
+	/*
+	*Checkes the users that are snoozed. If time has been passed, unsnooze those users.
+	*
+	*
+	*/
 	public static void checkSnoozedUsers(){
-		Date d = new Date();
+		Date date = new Date();
 		
-		Query q = new Query("snoozers");
-		PreparedQuery pq = datastore.prepare(q);
-		for (Entity e: pq.asIterable()) {
-			if (d.after( (Date) e.getProperty("snoozeTime"))) {
-				datastore.delete(e.getKey());
-				SMSToolkit.addMsgToQueue(SMSToolkit.prepString("Your snooze period has expired."), e.getKey().getName());
+		Query query = new Query("snoozers");
+		PreparedQuery preppedQuery = datastore.prepare(query);
+		for (Entity entity: preppedQuery.asIterable()) {
+			if (date.after( (Date) entity.getProperty("snoozeTime"))) {
+				//datastore.delete(entity.getKey()); Changed so that use of internal snooze Function.
+				unSnoozeUser(entity.getKey().getName());
+				SMSToolkit.addMsgToQueue(SMSToolkit.prepString("Your snooze period has expired."), entity.getKey().getName());
 			}
 		}
 	}
-	public static void deleteUser(String number) {
+
+	/*
+	*Deletes user from the System
+	*@param phoneNumber	The Mobile phone number of the user to be deleted from the system.
+	*
+
+	Joe: does this run the risk of trying to delete a user that doesnt exist? Does it Catch that
+	Joe: doe the illegalArgumentException Do anything?
+	Joe: Why no log?
+	*/
+	public static void deleteUser(String phoneNumber) {
 		try {
-			datastore.delete(KeyFactory.createKey("user", number));
+			datastore.delete(KeyFactory.createKey("user", phoneNumber));
 		} catch (IllegalArgumentException e) {
 			return;
 		}
