@@ -11,34 +11,34 @@ public class EventToolkit {
 	
 	public static void createEvent(String eName, String minPeople, String timeout, String creator) {
 		
-		Entity e = new Entity("event");
+		Entity entity = new Entity("event");
 		
-		e.setProperty("name", eName);
-		e.setProperty("minPeople" , Integer.parseInt(minPeople));
+		entity.setProperty("name", eName);
+		entity.setProperty("minPeople" , Integer.parseInt(minPeople));
 		Date date = new Date();
-		e.setProperty("timeout", new Date(date.getTime() + Integer.parseInt(timeout) * 60000));
-		e.setProperty("creator", creator);
+		entity.setProperty("timeout", new Date(date.getTime() + Integer.parseInt(timeout) * 60000));
+		entity.setProperty("creator", creator);
 		ArrayList<String> yesusr = new ArrayList<String>();
 		yesusr.add(creator);
-		e.setProperty("yes", yesusr );
-		e.setProperty("no", new ArrayList<String>() );
+		entity.setProperty("yes", yesusr );
+		entity.setProperty("no", new ArrayList<String>() );
 		
-		datastore.put(e);
+		datastore.put(entity);
 		
-		notifyNewEvent(eName, creator, minPeople, timeout, e.getKey().getId());
+		notifyNewEvent(eName, creator, minPeople, timeout, entity.getKey().getId());
 		
 	}
 	@SuppressWarnings("deprecation")
 	public static void listEvents(String msisdn) {
 		String message = "Current Events Are:%0a";
-		Query q = new Query("event");
-		PreparedQuery pq = datastore.prepare(q);
-		if(pq.countEntities() == 0){
+		Query query = new Query("event");
+		PreparedQuery preppedQuery = datastore.prepare(query);
+		if(preppedQuery.countEntities() == 0){
 			SMSToolkit.addMsgToQueue(SMSToolkit.prepString("There are no active events."), msisdn);
 			return;
 		}
-		for (Entity e : pq.asIterable()) {
-			message = message + "-" + e.getProperty("name") + "%0a";
+		for (Entity entity : preppedQuery.asIterable()) {
+			message = message + "-" + entity.getProperty("name") + "%0a";
 		}
 		
 		SMSToolkit.addMsgToQueue(SMSToolkit.prepString(message), msisdn);
@@ -59,64 +59,64 @@ public class EventToolkit {
 		String message = creator + " has created event:%0a" + eventName + "%0awhich needs at least%0a" + minPeople + " people%0a and will expire in%0a" + mins + 
 						" mins.%0a Reply 'YES " + id + "' or 'NO " + id + "'"; 
 		
-		Query q = new Query("user");
-		PreparedQuery pq = datastore.prepare(q);
-		for (Entity e : pq.asIterable()) {
-			String usrname = (String) e.getProperty("name");
+		Query query = new Query("user");
+		PreparedQuery preppedQuery = datastore.prepare(query);
+		for (Entity entity : preppedQuery.asIterable()) {
+			String usrname = (String) entity.getProperty("name");
 			if ( usrname.equals(creator)) {
 				SMSToolkit.addMsgToQueue(SMSToolkit.prepString( "You have created event: '" + eventName + "' which requires at least " + minPeople + " attendees and will expire in " + mins + 
-						" minutes. Send CANCEL and the event ID: " + id + " to cancel event"), e.getKey().getName());
+						" minutes. Send CANCEL and the event ID: " + id + " to cancel event"), entity.getKey().getName());
 				continue;
 			}
-			SMSToolkit.addMsgToQueue(SMSToolkit.prepString(message), e.getKey().getName());
+			SMSToolkit.addMsgToQueue(SMSToolkit.prepString(message), entity.getKey().getName());
 		}
 		
 	}
 	
 	public static void NotifyCancelledEvent(String name) {
-		Query q = new Query("user");
-		PreparedQuery pq = datastore.prepare(q);
-		for (Entity e : pq.asIterable()) {
-			SMSToolkit.addMsgToQueue(SMSToolkit.prepString("Event: '" + name + "' has been CANCELLED due to insufficient participants. "), e.getKey().getName());
+		Query query = new Query("user");
+		PreparedQuery preppedQuery = datastore.prepare(query);
+		for (Entity entity : preppedQuery.asIterable()) {
+			SMSToolkit.addMsgToQueue(SMSToolkit.prepString("Event: '" + name + "' has been CANCELLED due to insufficient participants. "), entity.getKey().getName());
 		}
 	}
 	
 	public static void NotifyUserCancelledEvent(String name, String creator) {
-		Query q = new Query("user");
-		PreparedQuery pq = datastore.prepare(q);
-		for (Entity e : pq.asIterable()) {
-			SMSToolkit.addMsgToQueue(SMSToolkit.prepString("Event: '" + name + "' has been CANCELLED by " + creator + "."), e.getKey().getName());
+		Query query = new Query("user");
+		PreparedQuery preppedQuery = datastore.prepare(query);
+		for (Entity entity : preppedQuery.asIterable()) {
+			SMSToolkit.addMsgToQueue(SMSToolkit.prepString("Event: '" + name + "' has been CANCELLED by " + creator + "."), entity.getKey().getName());
 		}
 	}
 	
 	public static void NotifyDeclinedEvent(String name) {
-		Query q = new Query("user");
-		PreparedQuery pq = datastore.prepare(q);
-		for (Entity e : pq.asIterable()) {
-			SMSToolkit.addMsgToQueue(SMSToolkit.prepString("Event: '" + name + "' has been CANCELLED. Too many users unable to attend. "), e.getKey().getName());
+		Query query = new Query("user");
+		PreparedQuery preppedQuery = datastore.prepare(query);
+		for (Entity entity : preppedQuery.asIterable()) {
+			SMSToolkit.addMsgToQueue(SMSToolkit.prepString("Event: '" + name + "' has been CANCELLED. Too many users unable to attend. "), entity.getKey().getName());
 		}
 	}
 	
 	public static void cleanExpiredEvents() {
-		Date d = new Date();
+		Date date = new Date();
 		
-		Query q = new Query("event");
-		PreparedQuery pq = datastore.prepare(q);
-		for (Entity e: pq.asIterable()) {
-			if (d.after( (Date) e.getProperty("timeout"))) {
-				datastore.delete(e.getKey());
-				NotifyCancelledEvent((String) e.getProperty("name") );
+		Query query = new Query("event");
+		PreparedQuery preppedQuery = datastore.prepare(query);
+		for (Entity entity: preppedQuery.asIterable()) {
+			if (date.after( (Date) entity.getProperty("timeout"))) {
+				datastore.delete(entity.getKey());
+				NotifyCancelledEvent((String) entity.getProperty("name") );
 			}
 		}
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static void eventVote(User u, long id, boolean b) {
-		Entity e = null;
+	public static void eventVote(User user, long id, boolean b) {
+		Entity entity = null;
 		try {
-			e = datastore.get(KeyFactory.createKey("event", id));
+			entity = datastore.get(KeyFactory.createKey("event", id));
 		} catch (EntityNotFoundException ex) {
-			SMSToolkit.addMsgToQueue(SMSToolkit.prepString("Event not found. Send HELP for info."), u.number);
+			SMSToolkit.addMsgToQueue(SMSToolkit.prepString("Event not found. Send HELP for info."), user.number);
 			return;
 		}
 		if (b) {
@@ -124,49 +124,49 @@ public class EventToolkit {
 			if (yesUsers == null) {
 				yesUsers = new ArrayList<String>();
 			}
-			yesUsers.add(u.name);
-			e.setProperty("yes", yesUsers);
+			yesUsers.add(user.name);
+			entity.setProperty("yes", yesUsers);
 		} else {
-			ArrayList<String> noUsers = (ArrayList<String>) e.getProperty("no");
+			ArrayList<String> noUsers = (ArrayList<String>) entity.getProperty("no");
 			if (noUsers == null) {
 				noUsers = new ArrayList<String>();
 			}
-			noUsers.add(u.name);
-			e.setProperty("no", noUsers);
+			noUsers.add(user.name);
+			entity.setProperty("no", noUsers);
 		}
 		
-		datastore.put(e);
-		SMSToolkit.addMsgToQueue("You have responded to event: " + e.getProperty("name"), u.number);
+		datastore.put(entity);
+		SMSToolkit.addMsgToQueue("You have responded to event: " + entity.getProperty("name"), user.number);
 		checkEventCounts();
 	}
 
 	@SuppressWarnings("unchecked")
 	public static void checkEventCounts() {
 		
-		Query q2 = new Query("user");
-		q2.setKeysOnly();
-		PreparedQuery pq2 = datastore.prepare(q2);
+		Query userQuery = new Query("user");
+		userQuery.setKeysOnly();
+		PreparedQuery userPreppedQuery = datastore.prepare(userQuery);
 		@SuppressWarnings("deprecation")
-		int numUser = pq2.countEntities();
+		int numUser = userPreppedQuery.countEntities();
 		
-		Query q = new Query("event");
-		PreparedQuery pq = datastore.prepare(q);
-		for (Entity e: pq.asIterable()) {
-			ArrayList<String> yesList = (ArrayList<String>) e.getProperty("yes");
-			ArrayList<String> noList = (ArrayList<String>) e.getProperty("no");
+		Query eventQuery = new Query("event");
+		PreparedQuery eventPreppedQuery = datastore.prepare(eventQuery);
+		for (Entity entity: eventPreppedQuery.asIterable()) {
+			ArrayList<String> yesList = (ArrayList<String>) entity.getProperty("yes");
+			ArrayList<String> noList = (ArrayList<String>) entity.getProperty("no");
 			
 			if (yesList != null) {
-				if (yesList.size() >= (long) e.getProperty("minPeople")) {
-					notifyEventConfirmed(e);
-					datastore.delete(e.getKey());
+				if (yesList.size() >= (long) entity.getProperty("minPeople")) {
+					notifyEventConfirmed(entity);
+					datastore.delete(entity.getKey());
 				}
 			}
 			
 			
 			if (noList == null) return;
-			if (numUser - noList.size() < (long) e.getProperty("minPeople")) {
-				NotifyDeclinedEvent((String) e.getProperty("name"));
-				datastore.delete(e.getKey());
+			if (numUser - noList.size() < (long) entity.getProperty("minPeople")) {
+				NotifyDeclinedEvent((String) entity.getProperty("name"));
+				datastore.delete(entity.getKey());
 			}
 			
 			
@@ -175,42 +175,42 @@ public class EventToolkit {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static void notifyEventConfirmed(Entity e) {
-		ArrayList<String> yesVotes = (ArrayList<String>) e.getProperty("yes");
+	public static void notifyEventConfirmed(Entity entity) {
+		ArrayList<String> yesVotes = (ArrayList<String>) entity.getProperty("yes");
 		
 		String userList = "";
-		for (String u : yesVotes) {
-			userList += u;
-			if (u == yesVotes.get(yesVotes.size()-1   )   ) {
+		for (String user : yesVotes) {
+			userList += user;
+			if (user == yesVotes.get(yesVotes.size()-1   )   ) {
 				userList += ".";
 			} else {
 				userList += ", ";
 			}
 		}
 		
-		Query q = new Query("user");
-		PreparedQuery pq = datastore.prepare(q);
-		for (Entity usr : pq.asIterable()) {
-			SMSToolkit.addMsgToQueue(SMSToolkit.prepString("Event: '" + e.getProperty("name") + "' has been CONFIRMED. People attending: " + userList), usr.getKey().getName());
+		Query query = new Query("user");
+		PreparedQuery preppedQuery = datastore.prepare(query);
+		for (Entity usr : preppedQuery.asIterable()) {
+			SMSToolkit.addMsgToQueue(SMSToolkit.prepString("Event: '" + entity.getProperty("name") + "' has been CONFIRMED. People attending: " + userList), usr.getKey().getName());
 		}
 	}
 
 	public static void cancelEvent(long id, String creator, String msisdn) {
-		Entity e;
+		Entity entity;
 		try {
-			e = datastore.get(KeyFactory.createKey("event", id));
-		} catch (EntityNotFoundException e1) {
+			entity = datastore.get(KeyFactory.createKey("event", id));
+		} catch (EntityNotFoundException e) {
 			SMSToolkit.addMsgToQueue(SMSToolkit.prepString("Could not cancel event, it does not exist."), msisdn);
 			return;
 		}
 		
-		String ec = (String) e.getProperty("creator"); 
+		String eventCreator = (String) entity.getProperty("creator"); 
 		
-		if (!ec.equals(creator)) {
+		if (!eventCreator.equals(creator)) {
 			SMSToolkit.addMsgToQueue(SMSToolkit.prepString("Only the event creator can cancel an event."), msisdn);
 		} else {
-			datastore.delete(e.getKey());
-			NotifyUserCancelledEvent((String) e.getProperty("name"), creator);
+			datastore.delete(entity.getKey());
+			NotifyUserCancelledEvent((String) entity.getProperty("name"), creator);
 		}	
 	}
 }
