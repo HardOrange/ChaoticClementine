@@ -31,13 +31,13 @@ public class SendSMSServlet extends HttpServlet {
 	}
 	
 	public static void sendSMS(String text, String number) {
-		Entity e = null;
+		Entity entity = null;
 		try {
-			e = datastore.get(KeyFactory.createKey("snoozers", number));
-		} catch (EntityNotFoundException e1) {
-			e1.printStackTrace();
+			entity = datastore.get(KeyFactory.createKey("snoozers", number));
+		} catch (EntityNotFoundException e) {
+			e.printStackTrace();
 		}
-		if(e == null || text.toLowerCase().contains("snooze")){
+		if(entity == null || text.toLowerCase().contains("snooze")){
 			String cleansed = text.replace("&", "%26");
 			cleansed = cleansed.replace("#", "%23");
 		
@@ -47,13 +47,13 @@ public class SendSMSServlet extends HttpServlet {
 			URL url = null;
 			try {
 				url = new URL(s);
-			} catch (MalformedURLException ex2) {
-				ex2.printStackTrace();
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
 			}
 			try {
 				url.openStream();
-			} catch (IOException ex) {
-				ex.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
 			} 
 			log.fine("sent");
 		} else {
